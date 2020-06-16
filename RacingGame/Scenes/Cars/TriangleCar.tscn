@@ -1,0 +1,13 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://Assets/Cars/Triangle/TriangleCar.glb" type="PackedScene" id=1]
+[ext_resource path="res://Scripts/Cars/TriangleCar.gd" type="Script" id=2]
+
+[sub_resource type="ConcavePolygonShape" id=1]
+data = PoolVector3Array( -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1.0066, 0.0026, 0.0063, 0.999, 0.0004, -1.0001, -1, 0, 0, -1.0066, 0.0026, 0.0063, 0.9924, 0.0026, -0.9937, 0.999, 0.0004, -1.0001, 1, 1.0001, 0, 0.999, 0.0004, 0.9999, -1, 0, 0, -1.001, 0, 0, -1.001, 0, 0, -1.001, 0, 0, 0.999, 0.0004, -1.0001, 1, 1, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 1.0031, 0.4739, 0.0002, 0.999, 0.0004, -1.0001, -1, 0, 0, 0.999, 0.0004, 0.9999, 1.0031, 0.4739, 0.0002, -1, 0, 0, 0.999, 0.0004, 0.9999, 1, 1.0001, 0, 1.0031, 0.4739, 0.0002, 0.999, 0.0004, -1.0001, 1.0031, 0.4739, 0.0002, 1, 1, 0 )
+
+[node name="TriangleCar" instance=ExtResource( 1 )]
+script = ExtResource( 2 )
+
+[node name="CollisionShape" type="CollisionShape" parent="." index="0"]
+shape = SubResource( 1 )
