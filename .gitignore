@@ -10,6 +10,9 @@ export_presets.cfg
 __pycache__
 /dist/
 
+# Krita ignores
+*.kra
+
 # Mono-specific ignores
 .mono/
 data_*/
