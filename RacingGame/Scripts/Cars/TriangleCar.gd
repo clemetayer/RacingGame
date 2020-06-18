@@ -8,51 +8,47 @@ export var FLOOR_PUSH_FORCE = 20
 export var MAX_ROT_TILT = PI/12
 # Tilt speed for turning left or right
 export var TILT_SPEED = PI/96
-# Rotation sensitivity when drifting
+# Rotation (for the car) sensitivity when drifting
 export var DRIFT_SENSITIVITY = PI/12
+# Rotation speed of the movement vector when drifting
+export var DRIFT_SLIDE = 40
 
+# Direction towards the car is supposed to go
 var direction = Vector3()
-var rot = Vector3()
-var gravity = -10
+# Real direction of the car + levitation
 var velocity = Vector3()
+# Rotation of the car (in radians) in the world basis
+var rot = Vector3()
+# Rotation of the movement vector (to get a sliding feeling)
+var mvRot = Vector3()
+# Epsilon for all rotations
+var epsilon = PI/100 # ~= 0 degrees : to avoid very small rotations making the car look blurry around 0 degrees
+# Gravity
+var gravity = -10
+# Position of the mouse when clicked
 var baseMousePos = null
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	rot = Vector3(0,0,0)
+	mvRot = Vector3(0,0,0)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _physics_process(delta):
 	direction = Vector3(0,0,0)
-	if(Input.is_action_pressed("Forward")):
-		direction.x += cos(rot.y + PI)
-		direction.z += sin(rot.y)
-	if(Input.is_action_pressed("Backward")):
-		direction.x += cos(rot.y)
-		direction.z += sin(rot.y + PI)
-	if(Input.is_action_pressed("Left")):
-		direction.x += sin(rot.y)
-		direction.z += cos(rot.y)
-		rot.x += computeTiltRotation(-1)
-	elif(Input.is_action_pressed("Right")):
-		direction.x += sin(rot.y + PI)
-		direction.z += cos(rot.y + PI)
-		rot.x += computeTiltRotation(1)
-	else: # center
-		rot.x += computeTiltRotation(0)
-	if(Input.is_action_pressed("Drift")):
-		rot.y += - (get_node("UI/MouseGauge").computeDriftAmount() * DRIFT_SENSITIVITY)
-#		print("drifting : ", get_node("UI/MouseGauge").computeDriftAmount())
-	elif(Input.is_action_just_released("Drift")):
-		get_node("UI/MouseGauge").hideGauge()
-
+	computeMovementAngle()
+	
+	inputManagement()
+	
 	direction = direction.normalized()
 	direction *= SPEED * delta
 	
+	mvRot.x = fmod(mvRot.x,2*PI)
+	mvRot.y = fmod(mvRot.y,2*PI)
+	mvRot.z = fmod(mvRot.z,2*PI)
 	rot.x = fmod(rot.x,2*PI)
 	rot.y = fmod(rot.y,2*PI)
 	rot.z = fmod(rot.z,2*PI)
-	
 	set_rotation(rot)
 	
 	velocity.y += gravity * delta
@@ -65,9 +61,38 @@ func _physics_process(delta):
 	
 	velocity = move_and_slide(velocity,Vector3(0,3,0))
 
-# computes the direction rotation of a tilt with direction (-1 for left, 0 for center, 1 for right)
+func inputManagement():
+	if(Input.is_action_pressed("Forward")):
+		direction.x += cos(mvRot.y + PI)
+		direction.z += sin(mvRot.y)
+	if(Input.is_action_pressed("Backward")):
+		direction.x += cos(mvRot.y)
+		direction.z += sin(mvRot.y + PI)
+	if(Input.is_action_pressed("Left")):
+		direction.x += sin(mvRot.y)
+		direction.z += cos(mvRot.y)
+		rot.x += computeTiltRotation(-1)
+	elif(Input.is_action_pressed("Right")):
+		direction.x += sin(mvRot.y + PI)
+		direction.z += cos(mvRot.y + PI)
+		rot.x += computeTiltRotation(1)
+	else: # center
+		rot.x += computeTiltRotation(0)
+	if(Input.is_action_pressed("Drift")):
+		rot.y += - (get_node("UI/MouseGauge").computeDriftAmount() * DRIFT_SENSITIVITY)
+#		print("drifting : ", get_node("UI/MouseGauge").computeDriftAmount())
+	elif(Input.is_action_just_released("Drift")):
+		get_node("UI/MouseGauge").hideGauge()
+
+# computes the direction the car will move
+func computeMovementAngle():
+	if(Input.is_action_pressed("Steer") or (abs(mvRot.y - rot.y) < epsilon)):
+		mvRot.y = rot.y
+	else:
+		mvRot.y += (rot.y - mvRot.y)/DRIFT_SLIDE
+
+# computes the rotation of a tilt with direction (-1 for left, 0 for center, 1 for right)
 func computeTiltRotation(direction):
-	var epsilon = 3 # ~= 0 degrees : to avoid very small rotations making the car look blurry around 0 degrees
 	if(direction == -1): # left
 		if(rot.x > MAX_ROT_TILT):
 			return 0
