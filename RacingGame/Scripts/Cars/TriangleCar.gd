@@ -5,45 +5,55 @@ export var SPEED = 1000
 # Force that makes the car levitate
 export var FLOOR_PUSH_FORCE = 20
 # Maximum rotation tilt for turning left or right
-export var MAX_ROT_TILT = 15
+export var MAX_ROT_TILT = PI/12
 # Tilt speed for turning left or right
-export var TILT_SPEED = 0.05
+export var TILT_SPEED = PI/96
 # Rotation sensitivity when drifting
-export var DRIFT_SENSITIVITY = 0.15
+export var DRIFT_SENSITIVITY = PI/12
 
 var direction = Vector3()
+var rot = Vector3()
 var gravity = -10
 var velocity = Vector3()
 var baseMousePos = null
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	pass # Replace with function body.
+	rot = Vector3(0,0,0)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _physics_process(delta):
 	direction = Vector3(0,0,0)
-	
 	if(Input.is_action_pressed("Forward")):
-		direction.x -= 1
+		direction.x += cos(rot.y + PI)
+		direction.z += sin(rot.y)
 	if(Input.is_action_pressed("Backward")):
-		direction.x += 1
+		direction.x += cos(rot.y)
+		direction.z += sin(rot.y + PI)
 	if(Input.is_action_pressed("Left")):
-		direction.z += 1
-		rotate_x(computeTiltRotation(-1))
+		direction.x += sin(rot.y)
+		direction.z += cos(rot.y)
+		rot.x += computeTiltRotation(-1)
 	elif(Input.is_action_pressed("Right")):
-		direction.z -= 1
-		rotate_x(computeTiltRotation(1))
+		direction.x += sin(rot.y + PI)
+		direction.z += cos(rot.y + PI)
+		rot.x += computeTiltRotation(1)
 	else: # center
-		rotate_x(computeTiltRotation(0))
+		rot.x += computeTiltRotation(0)
 	if(Input.is_action_pressed("Drift")):
-		rotate_y(- (get_node("UI/MouseGauge").computeDriftAmount() * DRIFT_SENSITIVITY)) 
+		rot.y += - (get_node("UI/MouseGauge").computeDriftAmount() * DRIFT_SENSITIVITY)
 #		print("drifting : ", get_node("UI/MouseGauge").computeDriftAmount())
 	elif(Input.is_action_just_released("Drift")):
 		get_node("UI/MouseGauge").hideGauge()
 
 	direction = direction.normalized()
 	direction *= SPEED * delta
+	
+	rot.x = fmod(rot.x,2*PI)
+	rot.y = fmod(rot.y,2*PI)
+	rot.z = fmod(rot.z,2*PI)
+	
+	set_rotation(rot)
 	
 	velocity.y += gravity * delta
 	velocity.x = direction.x
@@ -57,22 +67,21 @@ func _physics_process(delta):
 
 # computes the direction rotation of a tilt with direction (-1 for left, 0 for center, 1 for right)
 func computeTiltRotation(direction):
-	var cur_angle = get_rotation_degrees()
 	var epsilon = 3 # ~= 0 degrees : to avoid very small rotations making the car look blurry around 0 degrees
 	if(direction == -1): # left
-		if(cur_angle.x > MAX_ROT_TILT):
+		if(rot.x > MAX_ROT_TILT):
 			return 0
 		else:
 			return TILT_SPEED
 	elif(direction == 1): # right
-		if(cur_angle.x < -MAX_ROT_TILT):
+		if(rot.x < -MAX_ROT_TILT):
 			return 0
 		else:
 			return -TILT_SPEED
 	else: # center
-		if(cur_angle.x > epsilon):
+		if(rot.x > epsilon):
 			return -TILT_SPEED
-		elif(cur_angle.x < -epsilon):
+		elif(rot.x < -epsilon):
 			return TILT_SPEED
 		else:
 			return 0
