@@ -1,13 +1,19 @@
 extends KinematicBody
 
 # Max normal speed (by pressing forward only)
-export var SPEED = 1000
+export var NORMAL_SPEED = 100
+# Mass of the vehicle
+export var MASS = 3
 # Force that makes the car levitate
 export var FLOOR_PUSH_FORCE = 20
+# Amplitude of levitation cycle
+export var LEVITATION_AMP = 1
 # Maximum rotation tilt for turning left or right
 export var MAX_ROT_TILT = PI/12
 # Tilt speed for turning left or right
 export var TILT_SPEED = PI/96
+# Acceleration of the car
+export var ACCELERATION = 25
 # Rotation (for the car) sensitivity when drifting
 export var DRIFT_SENSITIVITY = PI/12
 # Rotation speed of the movement vector when drifting
@@ -15,6 +21,8 @@ export var DRIFT_SLIDE = 40
 
 # Direction towards the car is supposed to go
 var direction = Vector3()
+# Kind of same as direction, but mixed with a speed vector + Inertia
+var speedDir = Vector3()
 # Real direction of the car + levitation
 var velocity = Vector3()
 # Rotation of the car (in radians) in the world basis
@@ -35,37 +43,34 @@ func _ready():
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _physics_process(delta):
-	direction = Vector3(0,0,0)
+	
 	computeMovementAngle()
+	
+	set_rotation(rot)
 	
 	inputManagement()
 	
 	direction = direction.normalized()
-	direction *= SPEED * delta
+	direction *=  NORMAL_SPEED * delta
 	
-	mvRot.x = fmod(mvRot.x,2*PI)
-	mvRot.y = fmod(mvRot.y,2*PI)
-	mvRot.z = fmod(mvRot.z,2*PI)
-	rot.x = fmod(rot.x,2*PI)
-	rot.y = fmod(rot.y,2*PI)
-	rot.z = fmod(rot.z,2*PI)
-	set_rotation(rot)
+	computeSpeedDir()
 	
-	velocity.y += gravity * delta
-	velocity.x = direction.x
-	velocity.z = direction.z
+	velocity.y += (gravity * MASS) * delta
+	velocity.x = -speedDir.x # Actually don't know why i am forced to compute the opposite, but it works :/
+	velocity.z = -speedDir.z 
 	
 	var floorPos = get_node("RayCast").get_collision_point()
 	var posDiff = get_translation().y - floorPos.y
-	velocity.y += (1/(posDiff + 1)) * FLOOR_PUSH_FORCE * delta
+	velocity.y += (LEVITATION_AMP/posDiff) * (FLOOR_PUSH_FORCE * MASS) * delta
 	
-	velocity = move_and_slide(velocity,Vector3(0,3,0))
+	velocity = move_and_slide(velocity,Vector3(0,1,0))
 
 func inputManagement():
+	direction = Vector3(0,0,0)
 	if(Input.is_action_pressed("Forward")):
 		direction.x += cos(mvRot.y + PI)
 		direction.z += sin(mvRot.y)
-	if(Input.is_action_pressed("Backward")):
+	elif(Input.is_action_pressed("Backward")):
 		direction.x += cos(mvRot.y)
 		direction.z += sin(mvRot.y + PI)
 	if(Input.is_action_pressed("Left")):
@@ -78,11 +83,18 @@ func inputManagement():
 		rot.x += computeTiltRotation(1)
 	else: # center
 		rot.x += computeTiltRotation(0)
+		if(not(Input.is_action_pressed("Forward") or Input.is_action_pressed("Backward"))): # No directional key pressed
+			direction = Vector3(0,0,0)
 	if(Input.is_action_pressed("Drift")):
 		rot.y += - (get_node("UI/MouseGauge").computeDriftAmount() * DRIFT_SENSITIVITY)
-#		print("drifting : ", get_node("UI/MouseGauge").computeDriftAmount())
 	elif(Input.is_action_just_released("Drift")):
 		get_node("UI/MouseGauge").hideGauge()
+
+func computeSpeedDir():
+	var dist = speedDir - direction
+	dist -= dist/ACCELERATION
+	speedDir.x = dist.x
+	speedDir.z = dist.z
 
 # computes the direction the car will move
 func computeMovementAngle():
@@ -92,13 +104,13 @@ func computeMovementAngle():
 		mvRot.y += (rot.y - mvRot.y)/DRIFT_SLIDE
 
 # computes the rotation of a tilt with direction (-1 for left, 0 for center, 1 for right)
-func computeTiltRotation(direction):
-	if(direction == -1): # left
+func computeTiltRotation(dir):
+	if(dir == -1): # left
 		if(rot.x > MAX_ROT_TILT):
 			return 0
 		else:
 			return TILT_SPEED
-	elif(direction == 1): # right
+	elif(dir == 1): # right
 		if(rot.x < -MAX_ROT_TILT):
 			return 0
 		else:
