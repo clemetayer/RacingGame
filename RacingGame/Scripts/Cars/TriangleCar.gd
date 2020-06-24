@@ -22,7 +22,8 @@ export var ACCELERATION = 25
 export var DRIFT_SENSITIVITY = PI/12
 # Rotation speed of the movement vector when drifting
 export var DRIFT_SLIDE = 40
-
+# Boost gain when boosting (i.e boost barrier)
+export var BOOST_AMOUNT = 3
 
 # Direction towards the car is supposed to go
 var direction = Vector3()
@@ -34,6 +35,8 @@ var velocity = Vector3()
 var rot = Vector3()
 # Rotation of the movement vector (to get a sliding feeling)
 var mvRot = Vector3()
+# Actual speed of the car
+var speed = 0
 # Bonus height for levitation
 var levitationAngleHeight = 0
 # Epsilon for all rotations
@@ -42,6 +45,8 @@ var epsilon = PI/100 # ~= 0 degrees : to avoid very small rotations making the c
 var gravity = -10
 # Position of the mouse when clicked
 var baseMousePos = null
+# true if the car is boosting
+var boosting = false
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -58,7 +63,7 @@ func _physics_process(delta):
 	inputManagement()
 	
 	direction = direction.normalized()
-	direction *=  NORMAL_SPEED * delta
+	direction *=  speed * delta
 	
 	computeSpeedDir()
 	
@@ -97,12 +102,21 @@ func inputManagement():
 		rot.x += computeTiltRotation(0)
 		if(not(Input.is_action_pressed("Forward") or Input.is_action_pressed("Backward"))): # No directional key pressed
 			direction = Vector3(0,0,0)
+			speed = 0
 	if(Input.is_action_pressed("Drift")):
 		rot.y += - (get_node("UI/MouseGauge").computeDriftAmount() * DRIFT_SENSITIVITY)
 	elif(Input.is_action_just_released("Drift")):
 		get_node("UI/MouseGauge").hideGauge()
 
+# computes both the speed vector and the real speed
 func computeSpeedDir():
+	# real speed computing
+	if(speed <= NORMAL_SPEED):
+		speed = NORMAL_SPEED
+	if(boosting):
+		speed += BOOST_AMOUNT
+	
+	# speed vector computing
 	var dist = speedDir - direction
 	dist -= dist/ACCELERATION
 	speedDir.x = dist.x
@@ -141,3 +155,11 @@ func computeTiltRotation(dir):
 			return TILT_SPEED
 		else:
 			return 0
+
+
+func _on_BoostCollision_body_entered(body):
+	boosting = true
+
+
+func _on_BoostCollision_body_exited(body):
+	boosting = false

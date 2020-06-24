@@ -68,6 +68,8 @@ Camera2={
 3d_physics/layer_2="Ground"
 3d_physics/layer_3="Barrier"
 3d_physics/layer_4="CarRaycast"
+3d_physics/layer_5="BarrierBoost"
+3d_physics/layer_6="BackCarBoost"
 
 [rendering]
 
