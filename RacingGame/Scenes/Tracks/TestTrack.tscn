@@ -31,6 +31,8 @@ shape = SubResource( 2 )
 transform = Transform( -0.000219827, -0.342092, 0.939666, 0.000658181, 0.939666, 0.342092, -1, 0.000693671, 1.85944e-05, 5, 6.57216, 0 )
 script = ExtResource( 3 )
 FOLLOW_PATH = NodePath("../TriangleCar")
+TARGET_DISTANCE = 10.0
+TARGET_HEIGHT = 3.0
 
 [node name="TriangleCar" parent="." instance=ExtResource( 2 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.13563, -6.93421 )
