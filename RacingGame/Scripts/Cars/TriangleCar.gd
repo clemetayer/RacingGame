@@ -158,6 +158,7 @@ func computeTiltRotation(dir):
 
 
 func _on_BoostCollision_body_entered(body):
+	print("aled")
 	boosting = true
 
 
