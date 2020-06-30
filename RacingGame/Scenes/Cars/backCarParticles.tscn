@@ -1,14 +1,14 @@
 [gd_scene load_steps=6 format=2]
 
-[sub_resource type="Gradient" id=8]
+[sub_resource type="Gradient" id=1]
 offsets = PoolRealArray( 0, 0.631579, 1 )
 colors = PoolColorArray( 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0 )
 
-[sub_resource type="GradientTexture" id=9]
-gradient = SubResource( 8 )
+[sub_resource type="GradientTexture" id=2]
+gradient = SubResource( 1 )
 
-[sub_resource type="ParticlesMaterial" id=7]
-trail_color_modifier = SubResource( 9 )
+[sub_resource type="ParticlesMaterial" id=3]
+trail_color_modifier = SubResource( 2 )
 emission_shape = 2
 emission_box_extents = Vector3( 1, 0.5, 1 )
 direction = Vector3( 0, 0, 1 )
@@ -16,15 +16,15 @@ spread = 20.0
 gravity = Vector3( 0, 0, 0 )
 initial_velocity = 1.0
 
-[sub_resource type="SpatialMaterial" id=6]
+[sub_resource type="SpatialMaterial" id=4]
 emission_enabled = true
 emission = Color( 1, 1, 1, 1 )
 emission_energy = 3.16
 emission_operator = 0
 emission_on_uv2 = false
 
-[sub_resource type="CapsuleMesh" id=3]
-material = SubResource( 6 )
+[sub_resource type="CapsuleMesh" id=5]
+material = SubResource( 4 )
 radius = 0.01
 rings = 20
 
@@ -35,5 +35,5 @@ lifetime = 2.0
 speed_scale = 3.0
 visibility_aabb = AABB( -4, -4, -3.97278, 8, 8, 7.94556 )
 local_coords = false
-process_material = SubResource( 7 )
-draw_pass_1 = SubResource( 3 )
+process_material = SubResource( 3 )
+draw_pass_1 = SubResource( 5 )

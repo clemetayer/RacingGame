@@ -80,27 +80,34 @@ func _physics_process(delta):
 	else:
 		velocity.y += (gravity * MASS) * delta
 	
+	speedFeedBack()
+	
 	velocity = move_and_slide(velocity,Vector3(0,1,0))
 
 func inputManagement():
 	direction = Vector3(0,0,0)
 	if(Input.is_action_pressed("Forward")):
+		get_node("backCarParticles").emitting = true
 		direction.x += cos(mvRot.y + PI)
 		direction.z += sin(mvRot.y)
 	elif(Input.is_action_pressed("Backward")):
+		get_node("backCarParticles").emitting = true
 		direction.x += cos(mvRot.y)
 		direction.z += sin(mvRot.y + PI)
 	if(Input.is_action_pressed("Left")):
+		get_node("backCarParticles").emitting = true
 		direction.x += sin(mvRot.y)
 		direction.z += cos(mvRot.y)
 		rot.x += computeTiltRotation(-1)
 	elif(Input.is_action_pressed("Right")):
+		get_node("backCarParticles").emitting = true
 		direction.x += sin(mvRot.y + PI)
 		direction.z += cos(mvRot.y + PI)
 		rot.x += computeTiltRotation(1)
 	else: # center
 		rot.x += computeTiltRotation(0)
 		if(not(Input.is_action_pressed("Forward") or Input.is_action_pressed("Backward"))): # No directional key pressed
+			get_node("backCarParticles").emitting = false
 			direction = Vector3(0,0,0)
 			speed = 0
 	if(Input.is_action_pressed("Drift")):
@@ -156,6 +163,10 @@ func computeTiltRotation(dir):
 		else:
 			return 0
 
+# function to give a feedback of the speed to the player (i.e speedometer, particle color, etc.)
+func speedFeedBack():
+	var speed = velocity.length()
+	get_node("UI/Speedometer").changeSpeed(speed)
 
 func _on_BoostCollision_body_entered(body):
 	print("aled")
@@ -163,4 +174,5 @@ func _on_BoostCollision_body_entered(body):
 
 
 func _on_BoostCollision_body_exited(body):
+	print("oskour")
 	boosting = false

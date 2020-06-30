@@ -33,6 +33,7 @@ shape = SubResource( 2 )
 
 [node name="Camera" type="Camera" parent="."]
 transform = Transform( -0.000219827, -0.342092, 0.939666, 0.000658181, 0.939666, 0.342092, -1, 0.000693671, 1.85944e-05, 5, 6.57216, 0 )
+far = 1024.0
 script = ExtResource( 3 )
 FOLLOW_PATH = NodePath("../TriangleCar")
 TARGET_DISTANCE = 10.0
