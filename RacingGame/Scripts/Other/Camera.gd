@@ -21,22 +21,12 @@ func _ready():
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _physics_process(delta):
-	inputManagement()
 	
 	var targetPos = followThis.get_translation()
-	var targetRot = null
-	if(cameraType == 1):
-		targetRot = followThis.get("rot")
-	elif(cameraType == 2):
-		targetRot = followThis.get("mvRot")
+	
+	var targetRot = followThis.get("rot")
 
-	var cameraPos = targetPos + Vector3(cos(targetRot.y)*TARGET_DISTANCE, TARGET_HEIGHT, sin(targetRot.y + PI)*TARGET_DISTANCE)
+	var cameraPos = targetPos + Vector3(cos(targetRot)*TARGET_DISTANCE, TARGET_HEIGHT, sin(targetRot + PI)*TARGET_DISTANCE)
 
 	set_translation(cameraPos)
 	look_at(targetPos,Vector3(0,1,0))
-
-func inputManagement():
-	if(Input.is_action_just_pressed("Camera1")):
-		cameraType = 1
-	elif(Input.is_action_just_pressed("Camera2")):
-		cameraType = 2
