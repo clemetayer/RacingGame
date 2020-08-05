@@ -9,7 +9,7 @@ extends RigidBody
 ## Drive settings
 export var DRIVE_FORCE = 17.0 # The force that the engine generates
 export var THRUSTER_FORCE = 2 # Ship's thruster force (forward/backward)
-export var RUDDER_FORCE = 3 # Ship's rudder force (Left/Right)
+export var RUDDER_FORCE = PI/100 # Ship's rudder force (Left/Right)
 export var SLOWING_VEL_FACTOR = 0.99 # The percentage of velocity the ship maintains when not thrusting (e.g., a value of .99 means the ship loses 1% velocity when not thrusting)
 export var BRAKING_VEL_FACTOR = 0.95 # The percentage of velocty the ship maintains when braking
 export var ANGLE_OF_ROLL = 30.0 # The angle that the ship "banks" into a turn
@@ -18,6 +18,7 @@ export var ANGLE_OF_ROLL = 30.0 # The angle that the ship "banks" into a turn
 export var HOVER_HEIGHT = 3 # The height the ship maintains when hovering
 export var MAX_GROUND_DIST = 10.0 # The distance the ship can be above the ground before it is "falling"
 export var HOVER_FORCE = 300.0 # The force of the ship's hovering
+export var GROUND_ROTATION_SMOOTHENING = 0.25 # Rotation speed to follow the ground 
 
 ## Physics settings
 export var TERMINAL_VELOCITY = 500.0 # The max speed the ship can go
@@ -47,6 +48,7 @@ var drag # The air resistance the ship recieves in the forward direction
 var isOnGround # A flag determining if the ship is currently on the ground
 var sidewaysSpeed = 0.001 # To avoid it being = 0 (and making a division by 0)
 var sideFriction = 0.001 # idem
+var child_look_at # Look at dummy to smoothly rotate to that quaternion
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -56,9 +58,12 @@ func _ready():
 	hoverPID = get_node("PIDController")
 	sidewaysSpeed = Vector3(0,0,0)
 	sideFriction = Vector3(0,0,0)
+	child_look_at = Position3D.new()
+	add_child(child_look_at)
 	
 	# Calculate the ship's drag value
 	drag = DRIVE_FORCE / TERMINAL_VELOCITY
+
 
 func _process(delta):
 	
@@ -91,7 +96,6 @@ func _process(delta):
 	# If you want to add drifting to the game, divide Time.fixedDeltaTime by some amount
 	sideFriction = -right * (sidewaysSpeed/delta)
 	
-
 func _integrate_forces(state):
 	CalculateHover()
 	CalculatePropulsion()
@@ -142,8 +146,9 @@ func CalculateHover():
 		add_force(gravity,Vector3(0,0,0))
 	# Calculate the amount of pitch and roll the ship needs to match its orientation with that of the ground.
 	# This is done by creating a projection and then calculating the rotation needed to face that projection
-#	Vector3 projection = Vector3.ProjectOnPlane(transform.forward, groundNormal);
-#	Quaternion rotation = Quaternion.LookRotation(projection, groundNormal);
+	var projection = get_node("RayCastMinusZ").get_collision_point() - get_node("RayCast").get_collision_point()
+	var lookPoint = transform.origin + projection
+	look_at(lookPoint, get_node("RayCast").get_collision_normal())
 	# Move the ship over time to match the desired rotation to match the ground.
 	# done smoothly (using Lerp) to make it feel more realistic
 #	rigidBody.MoveRotation(Quaternion.Lerp(rigidBody.rotation, rotation, Time.deltaTime * 10f));
@@ -157,9 +162,10 @@ func CalculateHover():
 
 func CalculatePropulsion():
 	# Calculate the yaw torque based on the rudder and current angular velocity
-	var rotationTorque = rudder - get_angular_velocity().y
+#	var rotationTorque = rudder - get_angular_velocity().y
 	# Apply the torque to the ship's Y axis
-	add_torque(Vector3(0,1,0) * rotationTorque)
+	rotate(up, rudder)
+#	add_torque(Vector3(0,1,0) * rotationTorque)
 	# Finally, apply the sideways friction
 	add_force(sideFriction,Vector3(0,0,0))
 	if(thruster <= 0):
@@ -174,4 +180,3 @@ func CalculatePropulsion():
 	# the amount of applied thruster and subtracting the drag amount
 	var propulsion = DRIVE_FORCE * thruster - drag * clamp(speed, 0, TERMINAL_VELOCITY)
 	add_force(forward * propulsion, Vector3(0,0,0))
-	

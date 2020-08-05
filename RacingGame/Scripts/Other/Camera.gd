@@ -22,11 +22,13 @@ func _ready():
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _physics_process(delta):
 	
-	var targetPos = followThis.get_translation()
+	var targetBasis = followThis.global_transform.basis
+	self.global_transform.basis = targetBasis
 	
+	var targetPos = followThis.get_translation()
 	var targetRot = followThis.get("rot")
 
-	var cameraPos = targetPos + Vector3(cos(targetRot)*TARGET_DISTANCE, TARGET_HEIGHT, sin(targetRot + PI)*TARGET_DISTANCE)
+	var cameraPos = targetPos + Vector3(TARGET_DISTANCE, TARGET_HEIGHT, 0)
 
 	set_translation(cameraPos)
-	look_at(targetPos,Vector3(0,1,0))
+	look_at(targetPos, followThis.up)
