@@ -95,14 +95,13 @@ func _process(delta):
 	# Calculate the desired amount of friction to apply to the side of the vehicle.
 	# This is what keeps the ship from drifting into the walls during turns. 
 	# If you want to add drifting to the game, divide delta by some amount
-	sideFriction = -right * (sidewaysSpeed/(delta/DRIFT_AMOUNT))
+	sideFriction = -right * (sidewaysSpeed/delta)
 	
 	# Calculate the angle we want the ship's body to bank into a turn based on the current rudder.
 	# It is worth noting that these next few steps are completetly optional and are cosmetic.
 	# It just feels so darn cool
 	var angle = ANGLE_OF_ROLL * -rudder;
 	# Calculate the rotation needed for this new angle
-	print(get_rotation())
 	var bodyRotation = rotation * Vector3(-1/get_rotation().x,0,0) * angle # Finally, apply this angle to the ship's body
 	get_node("TriangleCar").rotation = shipBody.rotation.linear_interpolate(bodyRotation, delta * BANKING_SPEED)
 	
@@ -165,7 +164,7 @@ func CalculatePropulsion():
 	rotate(up, rudder)
 #	add_torque(Vector3(0,1,0) * rotationTorque)
 	# Finally, apply the sideways friction
-	add_force(sideFriction,Vector3(0,0,0))
+	add_force(sideFriction/DRIFT_AMOUNT,Vector3(0,0,0))
 	if(thruster <= 0):
 		linear_velocity *= SLOWING_VEL_FACTOR 
 	# Braking or driving requires being on the ground, so if the ship isn't on the ground, exit this method
