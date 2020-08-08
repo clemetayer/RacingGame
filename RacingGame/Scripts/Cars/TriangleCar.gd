@@ -8,14 +8,16 @@ extends RigidBody
 
 ## Drive settings
 export var DRIVE_FORCE = 17.0 # The force that the engine generates
-export var THRUSTER_FORCE = 2 # Ship's thruster force (forward/backward)
+export var THRUSTER_FORCE = 2.0 # Ship's thruster force (forward/backward)
 export var RUDDER_FORCE = PI/100 # Ship's rudder force (Left/Right)
+export var DRIFT_AMOUNT = 1.0 # How much the car will drift when turning
 export var SLOWING_VEL_FACTOR = 0.99 # The percentage of velocity the ship maintains when not thrusting (e.g., a value of .99 means the ship loses 1% velocity when not thrusting)
 export var BRAKING_VEL_FACTOR = 0.95 # The percentage of velocty the ship maintains when braking
 export var ANGLE_OF_ROLL = 30.0 # The angle that the ship "banks" into a turn
+export var BANKING_SPEED = 5.0 # How fast the ship "banks" into a turn
 
 ## Hover settings
-export var HOVER_HEIGHT = 3 # The height the ship maintains when hovering
+export var HOVER_HEIGHT = 3.0 # The height the ship maintains when hovering
 export var MAX_GROUND_DIST = 10.0 # The distance the ship can be above the ground before it is "falling"
 export var HOVER_FORCE = 300.0 # The force of the ship's hovering
 export var GROUND_ROTATION_SMOOTHENING = 0.25 # Rotation speed to follow the ground 
@@ -76,7 +78,6 @@ func _process(delta):
 	up = aim.y
 	left = aim.z
 	right = -aim.z
-
 	
 	# Methods for input detection
 	inputManagement()
@@ -93,8 +94,17 @@ func _process(delta):
 	
 	# Calculate the desired amount of friction to apply to the side of the vehicle.
 	# This is what keeps the ship from drifting into the walls during turns. 
-	# If you want to add drifting to the game, divide Time.fixedDeltaTime by some amount
-	sideFriction = -right * (sidewaysSpeed/delta)
+	# If you want to add drifting to the game, divide delta by some amount
+	sideFriction = -right * (sidewaysSpeed/(delta/DRIFT_AMOUNT))
+	
+	# Calculate the angle we want the ship's body to bank into a turn based on the current rudder.
+	# It is worth noting that these next few steps are completetly optional and are cosmetic.
+	# It just feels so darn cool
+	var angle = ANGLE_OF_ROLL * -rudder;
+	# Calculate the rotation needed for this new angle
+	print(get_rotation())
+	var bodyRotation = rotation * Vector3(-1/get_rotation().x,0,0) * angle # Finally, apply this angle to the ship's body
+	get_node("TriangleCar").rotation = shipBody.rotation.linear_interpolate(bodyRotation, delta * BANKING_SPEED)
 	
 func _integrate_forces(state):
 	CalculateHover()
@@ -137,6 +147,11 @@ func CalculateHover():
 		# ...and finally apply the hover and gravity forces
 		add_force(force, Vector3(0,0,0))
 		add_force(gravity, Vector3(0,0,0))
+		# Calculate the amount of pitch and roll the ship needs to match its orientation with that of the ground.
+		# This is done by creating a projection and then calculating the rotation needed to face that projection
+		var projection = get_node("RayCastMinusZ").get_collision_point() - get_node("RayCast").get_collision_point()
+		var lookPoint = transform.origin + projection
+		look_at(lookPoint, get_node("RayCast").get_collision_normal())
 	# ...Otherwise...
 	else:
 		#  ...use Up to represent the "ground normal". This will cause our ship to self-right itself in a case where it flips over
@@ -144,25 +159,8 @@ func CalculateHover():
 		# Calculate and apply the stronger falling gravity straight down on the ship
 		gravity = -groundNormal * FALL_GRAVITY
 		add_force(gravity,Vector3(0,0,0))
-	# Calculate the amount of pitch and roll the ship needs to match its orientation with that of the ground.
-	# This is done by creating a projection and then calculating the rotation needed to face that projection
-	var projection = get_node("RayCastMinusZ").get_collision_point() - get_node("RayCast").get_collision_point()
-	var lookPoint = transform.origin + projection
-	look_at(lookPoint, get_node("RayCast").get_collision_normal())
-	# Move the ship over time to match the desired rotation to match the ground.
-	# done smoothly (using Lerp) to make it feel more realistic
-#	rigidBody.MoveRotation(Quaternion.Lerp(rigidBody.rotation, rotation, Time.deltaTime * 10f));
-	# Calculate the angle we want the ship's body to bank into a turn based on the current rudder.
-	# It is worth noting that these next few steps are completetly optional and are cosmetic.
-	# It just feels so darn cool
-	var angle = ANGLE_OF_ROLL * -rudder;
-	# Calculate the rotation needed for this new angle
-#	Quaternion bodyRotation = transform.rotation * Quaternion.Euler(0f, 0f, angle);	# Finally, apply this angle to the ship's body
-#	shipBody.rotation = Quaternion.Lerp(shipBody.rotation, bodyRotation, Time.deltaTime * 10f);
 
 func CalculatePropulsion():
-	# Calculate the yaw torque based on the rudder and current angular velocity
-#	var rotationTorque = rudder - get_angular_velocity().y
 	# Apply the torque to the ship's Y axis
 	rotate(up, rudder)
 #	add_torque(Vector3(0,1,0) * rotationTorque)
