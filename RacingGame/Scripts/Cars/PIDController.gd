@@ -4,9 +4,9 @@ extends Spatial
 ## https://www.youtube.com/playlist?list=PLX2vGYjWbI0SvPiKiMOcj_z9zCG7V9lkp
 
 # Our PID coefficients for tuning the controller
-var pCoeff = 0.8
-var iCoeff = 0.0002
-var dCoeff = 0.2
+export var pCoeff = 0.8
+export var iCoeff = 0.02
+export var dCoeff = 0.2
 var minimum = -1
 var maximum = 1
 

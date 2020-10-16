@@ -50,7 +50,6 @@ var drag # The air resistance the ship recieves in the forward direction
 var isOnGround # A flag determining if the ship is currently on the ground
 var sidewaysSpeed = 0.001 # To avoid it being = 0 (and making a division by 0)
 var sideFriction = 0.001 # idem
-var child_look_at # Look at dummy to smoothly rotate to that quaternion
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -60,8 +59,6 @@ func _ready():
 	hoverPID = get_node("PIDController")
 	sidewaysSpeed = Vector3(0,0,0)
 	sideFriction = Vector3(0,0,0)
-	child_look_at = Position3D.new()
-	add_child(child_look_at)
 	
 	# Calculate the ship's drag value
 	drag = DRIVE_FORCE / TERMINAL_VELOCITY
@@ -97,13 +94,14 @@ func _process(delta):
 	# If you want to add drifting to the game, divide delta by some amount
 	sideFriction = -right * (sidewaysSpeed/delta)
 	
-	# Calculate the angle we want the ship's body to bank into a turn based on the current rudder.
-	# It is worth noting that these next few steps are completetly optional and are cosmetic.
-	# It just feels so darn cool
-	var angle = ANGLE_OF_ROLL * -rudder;
-	# Calculate the rotation needed for this new angle
-	var bodyRotation = rotation * Vector3(-1/get_rotation().x,0,0) * angle # Finally, apply this angle to the ship's body
-	get_node("TriangleCar").rotation = shipBody.rotation.linear_interpolate(bodyRotation, delta * BANKING_SPEED)
+	if(isOnGround):
+		# Calculate the angle we want the ship's body to bank into a turn based on the current rudder.
+		# It is worth noting that these next few steps are completetly optional and are cosmetic.
+		# It just feels so darn cool
+		var angle = ANGLE_OF_ROLL * -rudder;
+		# Calculate the rotation needed for this new angle
+		var bodyRotation = rotation * Vector3(-1/get_rotation().x,0,0) * angle # Finally, apply this angle to the ship's body
+		get_node("TriangleCar").rotation = shipBody.rotation.linear_interpolate(bodyRotation, delta * BANKING_SPEED)
 	
 func _integrate_forces(state):
 	CalculateHover()
@@ -150,6 +148,7 @@ func CalculateHover():
 		# This is done by creating a projection and then calculating the rotation needed to face that projection
 		var projection = get_node("RayCastMinusZ").get_collision_point() - get_node("RayCast").get_collision_point()
 		var lookPoint = transform.origin + projection
+		DebugDraw.draw_line_3d(get_node("RayCast").get_collision_point(), projection, Color(1,0,0))
 		look_at(lookPoint, get_node("RayCast").get_collision_normal())
 	# ...Otherwise...
 	else:

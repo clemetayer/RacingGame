@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://Scenes/Tracks/Parts/ForestTrackGround.tscn" type="PackedScene" id=1]
+[ext_resource path="res://Scenes/Cars/TriangleCar.tscn" type="PackedScene" id=4]
+[ext_resource path="res://Scenes/Backgrounds/BlueGreen.tres" type="Environment" id=5]
+
+[node name="ForestTrack" type="Spatial"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource( 5 )
+
+[node name="InterpolatedCamera" type="InterpolatedCamera" parent="."]
+transform = Transform( -1.62921e-07, 0.5, -0.866025, 0, 0.866025, 0.5, 1, 8.14605e-08, -1.41094e-07, 126, -7, -10 )
+current = true
+far = 5000.0
+target = NodePath("../TriangleCar/CameraFollow")
+speed = 5.0
+enabled = true
+
+[node name="TriangleCar" parent="." instance=ExtResource( 4 )]
+transform = Transform( -0.965926, 0, 0.258819, 0, 1, 0, -0.258819, 0, -0.965926, -121, 4, -14 )
+DRIFT_AMOUNT = 4.0
+
+[node name="CameraFollow" type="Spatial" parent="TriangleCar"]
+transform = Transform( -1.62921e-07, -0.258819, 0.965926, 0, 0.965926, 0.258819, -1, 4.2167e-08, -1.57369e-07, 10, 5, 0 )
+
+[node name="ForestTrack" parent="." instance=ExtResource( 1 )]
